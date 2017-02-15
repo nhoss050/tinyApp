@@ -5,11 +5,23 @@
 
 </head>
 <body>
-  <% include partials/_header %>
+  <ul>
+    <% include partials/_header %>
     <% for (each in urls) { %>
-    <%= urls[each] %><br/>
+      <li><form action="/urls/<%= each %>/delete" method='post'>
+      <%=each%> --->  <a href=" <%= urls[each]%>"><%= urls[each]%></a>
 
+        <a href="/urls/<%= each %>">Edit</a>
+        <button>delete</button>
+      </form>
+
+      </li><br/>
     <% } %>
-    <a href="/urls/new">New</a>
+
+</ul>
+    <br/>
+
+
+    <a href="/urls/new">Add a new link here!</a>
 </body>
 </html>
