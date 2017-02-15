@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>urls_index</title>
+
+</head>
+<body>
+  <% include partials/_header %>
+    <% for (each in urls) { %>
+    <%= urls[each] %><br/>
+
+    <% } %>
+    <a href="/urls/new">New</a>
+</body>
+</html>
