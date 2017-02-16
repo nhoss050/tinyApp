@@ -1,25 +1,20 @@
-<% if(!(username)) { %>
 
-
-    <form action="/login" method="POST" style="margin:5px;">
-        <label for="loginform">Enter a your user name </label>
-        <input id="loginform" type="text" name="userName"  style="width: 200px">
-        <input type="submit" value="Submit">
-
-
-
-
- you have nothing!
-
-</form>
+<div style="margin:0px 0px 50px 1000px;">
+<% if(!(user_id)) { %>
+ <a href="/login">login!</a>
+<a style="margin:0px 0px 0px 0px;"href="/register">Register here!</a>
 <% } %>
-
-
-
-<% if((username)) { %>
-<form action="/logout" method='post'>
- <%=username%>  <button>Log Out!</button>
+<% if((user_id)) { %>
+<form action="/logout" method='post' >
+ <b><%=user_id.email%></b>  <button >Log Out!</button>
 
  <% } %>
  </form>
   <br/>
+
+
+
+
+
+
+ </div>
