@@ -1,1 +1,25 @@
-<h1> -header partials </h1>
+<% if(!(username)) { %>
+
+
+    <form action="/login" method="POST" style="margin:5px;">
+        <label for="loginform">Enter a your user name </label>
+        <input id="loginform" type="text" name="userName"  style="width: 200px">
+        <input type="submit" value="Submit">
+
+
+
+
+ you have nothing!
+
+</form>
+<% } %>
+
+
+
+<% if((username)) { %>
+<form action="/logout" method='post'>
+ <%=username%>  <button>Log Out!</button>
+
+ <% } %>
+ </form>
+  <br/>

@@ -1,10 +1,14 @@
 var express = require("express");
+var cookieParser = require('cookie-parser')
+const bodyParser = require("body-parser");
 var app = express();
 var PORT = process.env.PORT || 8080; // default port 8080
 
 
+//middleware
 
-
+app.use(cookieParser());
+app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs")
 
 var urlDatabase = {
@@ -37,20 +41,30 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, link: shortUrl};
+  let templateVars = {
+    urls: urlDatabase,
+    link: shortUrl,
+    username: req.cookies["username"],
+
+  };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  console.log('im here');
-  res.render("urls_new");
+  let templateVars = {
+      shortURL: req.params.id,
+      database: urlDatabase,
+      username: req.cookies["username"],
+    };
+  res.render("urls_new",templateVars);
 });
 
 app.get("/urls/:id", (req, res) => {
   if(urlDatabase[req.params.id]) {
     let templateVars = {
       shortURL: req.params.id,
-      database: urlDatabase
+      database: urlDatabase,
+      username: req.cookies["username"],
     };
     res.render("urls_show", templateVars);
   } else {
@@ -59,18 +73,16 @@ app.get("/urls/:id", (req, res) => {
 
 });
 
-const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
-
 
 app.post("/urls", (req, res) => {
   console.log(req.body.longURL);
   let LongRec = req.body.longURL
-  if(!(LongRec.includes('http'))){
+  if(!(LongRec.substring(0, 7) == 'http://')){
     LongRec = "http://"+LongRec
   }
   console.log(LongRec)
   urlDatabase[generateRandomString()] = LongRec;
+  res.redirect("/urls");
          // Respond with 'Ok' (we will replace this)
 });
 
@@ -82,9 +94,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  //console.log(req.params.id);
   delete urlDatabase[req.params.id];
-  //console.log(urlDatabase);
   res.redirect("/urls");         // Respond with 'Ok' (we will replace this)
 });
 
@@ -92,12 +102,24 @@ app.post("/urls/:id", (req, res) => {
  // console.log(req.params.id);
   console.log(req.body.newlongURL);
   var LongRec = req.body.newlongURL
-
-
-  //res.send("It WORRRKS");
   urlDatabase[req.params.id] = req.body.newlongURL ;
-  //console.log(urlDatabase);
   res.redirect("/urls");         // Respond with 'Ok' (we will replace this)
+});
+
+app.post("/login", (req, res) => {
+ // console.log(req.params.id);
+  var UName = req.body.userName;
+  res.cookie('username',UName);
+  res.redirect("/urls");
+
+});
+
+app.post("/logout", (req, res) => {
+ // console.log(req.params.id);
+  //var UName = req.body.userName;
+  res.clearCookie('username')
+  res.redirect("/urls");
+
 });
 
 app.listen(PORT, () => {
