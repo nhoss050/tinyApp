@@ -7,9 +7,11 @@
 <body>
   <ul>
     <% include partials/_header %>
+
     <% for (each in urls) { %>
+    <% if (urls[each].userInDB === user_id["id"]) { %>
       <li><form action="/urls/<%= each %>/delete" method='post'>
-      <%=each%> --->  <a href=" <%= urls[each]%>"><%= urls[each]%></a>
+       <a href=" /u/<%= each %>"><%= each%></a> --->  <a href=" <%= urls[each].longUrls%>"><%= urls[each].longUrls%></a>
 
         <a href="/urls/<%= each %>">Edit</a>
         <button>delete</button>
@@ -17,7 +19,7 @@
 
       </li><br/>
     <% } %>
-
+<% } %>
 </ul>
     <br/>
 

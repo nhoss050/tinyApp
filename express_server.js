@@ -1,6 +1,7 @@
 var express = require("express");
 var cookieParser = require('cookie-parser')
 const bodyParser = require("body-parser");
+const bcrypt = require('bcrypt');
 var app = express();
 var PORT = process.env.PORT || 8080; // default port 8080
 
@@ -13,12 +14,14 @@ app.set("view engine", "ejs")
 // the pre-defined url data base objetc which will be updated
 var urlDatabase = {
 
-  "userRandomID": {
-    "b2xVn2": "http://www.lighthouselabs.ca",
-  },
- "user2RandomID": {
-    "9sm5xK": "http://www.google.com"
-  },
+    "b2xVn2":{
+    longUrls: "http://www.lighthouselabs.ca",
+    userInDB: "userRandomID",
+    },
+    "9sm5xK":{
+    longUrls: "http://www.google.com",
+    userInDB: "userRandomID",
+    },
 };
 // the pre-defined user registeration object
 
@@ -32,6 +35,11 @@ const users = {
     id: "user2RandomID",
     email: "user2@example.com",
     password: "dishwasher-funk"
+  },
+  "Nima": {
+    id: "Nima",
+    email: "nhoss050@uottawa.ca",
+    password: "12",
   }
 }
 
@@ -51,7 +59,7 @@ function compareuseremailtoDB(xemail,xpassword) {
 
     for (eachuser in users) {
         if(users[eachuser].email === xemail) {
-          if(users[eachuser].password === xpassword) {
+          if(bcrypt.compareSync(xpassword,users[eachuser].password)) {
             return users[eachuser].id;
           }
         }
@@ -92,10 +100,17 @@ let userfound = users[cookiefound];
     user_id: userfound,
 
   };
-
-
+  if(templateVars["user_id"]) {
+  //console.log("user id in the moment is : ",templateVars["user_id"]);
   res.render("urls_index", templateVars);
+}
+else {
+res.redirect("/login");
+}
+
+
 });
+
 // view two
 app.get("/urls/new", (req, res) => {
 
@@ -134,38 +149,59 @@ let userfound = users[cookiefound];
     }
 
 });
-
+// post all the  links
 app.post("/urls", (req, res) => {
-  console.log(req.body.longURL);
+  //console.log(req.body.longURL);
   let LongRec = req.body.longURL
   if(!(LongRec.substring(0, 7) == 'http://')){
     LongRec = "http://"+LongRec
   }
-  console.log(LongRec)
-  urlDatabase[generateRandomString()] = LongRec;
+  //console.log(LongRec)
+  //before changes
+ // console.log("user entered the address:",LongRec);
+  //after changes
+  urlDatabase[generateRandomString()]= { longUrls: LongRec, userInDB:req.cookies["user_id"],};
+
+  // console.log("updated data base is",urlDatabase);
   res.redirect("/urls");
          // Respond with 'Ok' (we will replace this)
 });
 //--------------- DAy 2 -------------------
 
 app.get("/u/:shortURL", (req, res) => {
-   let longURL = urlDatabase[req.params.shortURL];
-     console.log("long url is :",longURL);
+   let longURL = urlDatabase[req.params.shortURL].longUrls;
+     //console.log("long url is :",longURL);
   res.redirect(longURL);
 
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id];
-  res.redirect("/urls");         // Respond with 'Ok' (we will replace this)
+
+//console.log("req.cookie",req.cookies.user_id)
+//console.log("req.cookie is equal to?",urlDatabase[req.params.id].userInDB)
+
+  if(urlDatabase[req.params.id].userInDB === req.cookies.user_id) {
+    console.log("right user is deleting");
+    delete urlDatabase[req.params.id];
+  } else {
+    res.status(403).send('!Access denied!')
+  }
+
+  res.redirect("/urls");
+         // Respond with 'Ok' (we will replace this)
 });
 
 app.post("/urls/:id", (req, res) => {
  // console.log(req.params.id);
-  console.log(req.body.newlongURL);
+  //console.log(req.body.newlongURL);
   var LongRec = req.body.newlongURL
-  urlDatabase[req.params.id] = req.body.newlongURL ;
-  res.redirect("/urls");         // Respond with 'Ok' (we will replace this)
+    if(urlDatabase[req.params.id].userInDB === req.cookies.user_id) {
+      urlDatabase[req.params.id].longUrls = req.body.newlongURL ;
+      res.redirect("/urls");         // Respond with 'Ok' (we will replace this)
+    } else {
+    res.status(403).send('!Access denied!')
+    }
+
 });
 
 app.get("/login", (req, res) => {
@@ -173,29 +209,21 @@ app.get("/login", (req, res) => {
     res.render("user_login");
   });
 
-
+//----------- Login/logout -------------------------
 
 app.post("/login", (req, res) => {
 
-
-
-
-    console.log("login body is:",req.body.email);
+    //console.log("login body is:",req.body.email);
     var loginEmail = req.body.email;
     let  loginPass = req.body.password;
     let theRequiredUSer = compareuseremailtoDB(loginEmail,loginPass)
-    console.log("the required user is: ",theRequiredUSer )
+    console.log("the user info is: ",users )
       if(!(theRequiredUSer)){
         return res.status(400).send('email not found!')
       } else {
         res.cookie('user_id',theRequiredUSer);
       }
       res.redirect("/urls");
-
-
-
-
-
 
 });
 
@@ -207,6 +235,8 @@ app.post("/logout", (req, res) => {
 
 });
 //--------------- DAy 3 -------------------
+
+//----------- Register -------------------------
 
 app.get("/register", (req, res) => {
 // keeping these values for now
@@ -229,15 +259,26 @@ app.post("/register", (req, res) => {
       }
     }
     var GeneratedID = generateRandomString()
+
+// Define Hashed pass ------
+
+  const passwordToHash = req.body.password; // you will probably this from req.params
+  const hashed_password = bcrypt.hashSync(passwordToHash, 10);
+  console.log("actual password", passwordToHash);
+  console.log("hashed password", hashed_password);
+
+//---------------------------
+
+
     let newRegisterObject = {
       id: GeneratedID,
       email: req.body.email,
-      password: req.body.password,
-    }
+      password: hashed_password,
+      }
 // add the new object to DB and set cookie and redirect
     users[GeneratedID]= newRegisterObject
-    console.log("new object :", newRegisterObject);
-    console.log("updated DB :", users);
+    //console.log("new object :", newRegisterObject);
+    //console.log("updated DB :", users);
     res.cookie('user_id',GeneratedID);
     res.redirect("/urls");
   } else {
@@ -245,14 +286,8 @@ app.post("/register", (req, res) => {
     }
 });
 
-app.get("/cookies", (req, res) => {
 
-let cookies = req.cookies;
-res.send(cookies)
-
-
-});
-
+//########################  end routs and listen ############################
 
 
 app.listen(PORT, () => {
