@@ -3,6 +3,9 @@ var express = require("express");
 var cookieParser = require('cookie-parser')
 const bodyParser = require("body-parser");
 const bcrypt = require('bcrypt');
+const moment = require('moment');
+const methodOverride = require('method-override')
+
 var app = express();
 var PORT = process.env.PORT || 8080; // default port 8080
 
@@ -26,10 +29,12 @@ var urlDatabase = {
   "b2xVn2":{
     longUrls: "http://www.lighthouselabs.ca",
     userInDB: "userRandomID",
+    Datecreated: 00000,
     },
   "9sm5xK":{
     longUrls: "http://www.google.com",
     userInDB: "userRandomID",
+    Datecreated: 00000,
     },
 };
 // the pre-defined user registeration object
@@ -156,8 +161,11 @@ app.post("/urls", (req, res) => {
     let LongRec = req.body.longURL
     if(!(LongRec.substring(0, 7) == 'http://')) {
       LongRec = "http://"+LongRec
-    }
-    urlDatabase[generateRandomString()]= { longUrls: LongRec, userInDB:req.session.user_id,};
+     }
+    var date = moment().format();
+    urlDatabase[generateRandomString()]= { longUrls: LongRec, userInDB:req.session.user_id,Datecreated: date};
+
+    //console.log(date);
     res.status(200);
     res.redirect("/urls");
     } else {
@@ -170,6 +178,8 @@ app.get("/u/:shortURL", (req, res) => {
   if(urlDatabase[req.params.shortURL]) {
     let longURL = urlDatabase[req.params.shortURL].longUrls;
     res.redirect(longURL);
+
+
   } else {
       res.status(404).send('does not exist')
     }

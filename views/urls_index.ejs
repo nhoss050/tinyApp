@@ -5,22 +5,22 @@
 
 </head>
 <body>
-  <ul>
+  <table>
     <% include partials/_header %>
 
     <% for (each in urls) { %>
       <% if (urls[each].userInDB === user_id["id"]) { %>
-          <li><form action="/urls/<%= each %>/delete" method='post'>
-           <a href=" /u/<%= each %>"><%= each%></a> --->  <a href=" <%= urls[each].longUrls%>"><%= urls[each].longUrls%></a>
+          <tr><form action="/urls/<%= each %>/delete" method='post'><td>
+           <a href=" /u/<%= each %>"><%= each%></a></td><td> ---> </td> <td><a href=" <%= urls[each].longUrls%>"><%= urls[each].longUrls%></a> </td> <td><span style="font-size:30%;"">  created:<%= urls[each].Datecreated%></span></td>
 
-            <a style="margin:0 0 0 150px;" href=/urls/<%= each %> ">Edit</a>
-            <button style="margin:0 0 0 150px;">delete</button>
+            <td><a style="margin:0 0 0 150px;" href=/urls/<%= each %> ">Edit</a></td>
+            <td><button style="margin:0 0 0 150px;">delete</button></td>
             </form>
-            </li><br/>
+            </tr><br/>
     <% } %>
 
 <% } %>
-</ul>
+</table>
     <br/>
 
     <form method="GET" action="/urls/new">
