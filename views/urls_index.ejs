@@ -9,21 +9,22 @@
     <% include partials/_header %>
 
     <% for (each in urls) { %>
-    <% if (urls[each].userInDB === user_id["id"]) { %>
-      <li><form action="/urls/<%= each %>/delete" method='post'>
-       <a href=" /u/<%= each %>"><%= each%></a> --->  <a href=" <%= urls[each].longUrls%>"><%= urls[each].longUrls%></a>
+      <% if (urls[each].userInDB === user_id["id"]) { %>
+          <li><form action="/urls/<%= each %>/delete" method='post'>
+           <a href=" /u/<%= each %>"><%= each%></a> --->  <a href=" <%= urls[each].longUrls%>"><%= urls[each].longUrls%></a>
 
-        <a href="/urls/<%= each %>">Edit</a>
-        <button>delete</button>
-      </form>
-
-      </li><br/>
+            <a style="margin:0 0 0 150px;" href=/urls/<%= each %> ">Edit</a>
+            <button style="margin:0 0 0 150px;">delete</button>
+            </form>
+            </li><br/>
     <% } %>
+
 <% } %>
 </ul>
     <br/>
 
-
-    <a href="/urls/new">Add a new link here!</a>
+    <form method="GET" action="/urls/new">
+      <button style="margin:0 0 0 150px" >Add new link</button>
+    </form>
 </body>
 </html>
