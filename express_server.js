@@ -1,28 +1,26 @@
-var cookieSession = require('cookie-session')
+var cookieSession = require('cookie-session');
 var express = require("express");
-var cookieParser = require('cookie-parser')
+var cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
 const bcrypt = require('bcrypt');
 const moment = require('moment');
-const methodOverride = require('method-override')
-
-var app = express();
-var PORT = process.env.PORT || 8080; // default port 8080
-
+const methodOverride = require('method-override');
+const app = express();
+const PORT = process.env.PORT || 8080; // default port 8080
 
 //middleware
-
+app.use(methodOverride('_method'));
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
-app.set("view engine", "ejs")
+app.set("view engine", "ejs");
 
 app.use(cookieSession({
   name: 'session',
   keys: ['nimaisthebest'],
 
-}))
-//-----------DATA BASES--------------
+}));
 
+//-----------DATA BASES--------------
 // the pre-defined url data base objetc which will be updated
 var urlDatabase = {
 
@@ -30,31 +28,29 @@ var urlDatabase = {
     longUrls: "http://www.lighthouselabs.ca",
     userInDB: "userRandomID",
     Datecreated: 00000,
+    NumberOfVisits: 0,
     },
   "9sm5xK":{
     longUrls: "http://www.google.com",
     userInDB: "userRandomID",
     Datecreated: 00000,
+    NumberOfVisits:0,
     },
 };
 // the pre-defined user registeration object
-
 const User1passwordToHash = "nima"; // you will probably this from req.params
 const User2passwordToHash = "dishwasher-funk"; // you will probably this from req.params
 const User1hashed_password = bcrypt.hashSync(User1passwordToHash, 10);
 const User2hashed_password = bcrypt.hashSync(User2passwordToHash, 10);
-
-
 const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: User1hashed_password,
+    password:User1hashed_password,
   },
  "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: User2hashed_password,
   },
 }
 //----------------------------
@@ -100,9 +96,7 @@ app.get("/hello", (req, res) => {
 app.get("/urls", (req, res) => {
 
   let newcookie = req.session.user_id;
-
   let cookiefound = cookieFindsUser(newcookie);
-
   let userfound = users[cookiefound];
   let templateVars = {
     urls: urlDatabase,
@@ -112,8 +106,8 @@ app.get("/urls", (req, res) => {
   if(templateVars["user_id"]) {
     res.render("urls_index", templateVars);
   } else {
-      res.status(401).send('<a href="/login">You have to Login!</a>' );
-    }
+    res.status(401).send('<a href="/login">You have to Login!</a>' );
+  }
 });
 
 // view two
@@ -130,8 +124,8 @@ app.get("/urls/new", (req, res) => {
     res.status(200);
     res.render("urls_new",templateVars);
   } else {
-      res.status(401).send('<a href="/login">You have to Login!</a>' );
-   }
+    res.status(401).send('<a href="/login">You have to Login!</a>' );
+  }
 });
 
 // view three
@@ -139,17 +133,22 @@ app.get("/urls/:id", (req, res) => {
 //---> req.cookies
   let cookiefound = cookieFindsUser(req.session.user_id);
   let userfound = users[cookiefound];
-  console.log(urlDatabase[req.params.id])
   if(req.session.user_id) {
     if(urlDatabase[req.params.id]) {
-      let templateVars = {
-        shortURL: req.params.id,
-        user_id: userfound,
-      };
-      res.render("urls_show", templateVars);
-    } else {
-        res.status(404).send('Something broke!')
+     if(urlDatabase[req.params.id].userInDB === req.session.user_id) {
+        let templateVars = {
+          shortURL: req.params.id,
+          user_id: userfound,
+          NumberOfVisits : urlDatabase[req.params.id].NumberOfVisits,
+        };
+        res.render("urls_show", templateVars);
+      } else{
+        res.status(403).send('!Access denied!');
       }
+
+    } else {
+      res.status(404).send('Something broke!');
+    }
   } else {
     res.status(401).send('<a href="/login">You have to Login!</a>' );
   }
@@ -158,56 +157,57 @@ app.get("/urls/:id", (req, res) => {
 // post all the  links
 app.post("/urls", (req, res) => {
   if(req.session.user_id) {
-    let LongRec = req.body.longURL
-    if(!(LongRec.substring(0, 7) == 'http://')) {
-      LongRec = "http://"+LongRec
-     }
+    let LongRec = req.body.longURL;
+      if(!(LongRec.substring(0, 7) == 'http://')) {
+        LongRec = "http://"+LongRec
+      }
     var date = moment().format();
-    urlDatabase[generateRandomString()]= { longUrls: LongRec, userInDB:req.session.user_id,Datecreated: date};
+    urlDatabase[generateRandomString()]= { longUrls: LongRec, userInDB:req.session.user_id,Datecreated: date,NumberOfVisits: 0,};
 
     //console.log(date);
     res.status(200);
-    res.redirect("/urls");
+    res.redirect("/");
     } else {
       res.status(401).send('<a href="/login">You have to Login!</a>' );
-      }
+    }
 });
 //--------------- DAy 2 -------------------
-
 app.get("/u/:shortURL", (req, res) => {
+
   if(urlDatabase[req.params.shortURL]) {
     let longURL = urlDatabase[req.params.shortURL].longUrls;
+    urlDatabase[req.params.shortURL].NumberOfVisits ++;
     res.redirect(longURL);
 
 
   } else {
-      res.status(404).send('does not exist')
-    }
+      res.status(404).send('does not exist');
+  }
 });
 
-app.post("/urls/:id/delete", (req, res) => {
+app.delete("/urls/:id", (req, res) => {
   if(urlDatabase[req.params.id].userInDB === req.session.user_id) {
 
     delete urlDatabase[req.params.id];
   } else {
-      res.status(403).send('!Access denied!')
-    }
+    res.status(403).send('!Access denied!');
+  }
   res.redirect("/urls");
 });
 
 
-app.post("/urls/:id", (req, res) => {
+app.put("/urls/:id", (req, res) => {
   if(req.session.user_id) {
-    var LongRec = req.body.newlongURL
+    var LongRec = req.body.newlongURL;
     if(urlDatabase[req.params.id].userInDB === req.session.user_id) {
       urlDatabase[req.params.id].longUrls = req.body.newlongURL ;
       res.redirect("/urls");         // Respond with 'Ok' (we will replace this)
     } else {
-      res.status(403).send('!Access denied!')
+      res.status(403).send('!Access denied!');
     }
   } else {
     res.status(401).send('<a href="/login">You have to Login!</a>' );
-    }
+  }
 });
 //----------- Login/logout -------------------------
 
@@ -226,27 +226,24 @@ app.post("/login", (req, res) => {
 
   var loginEmail = req.body.email;
   let  loginPass = req.body.password;
-  let theRequiredUSer = compareuseremailtoDB(loginEmail,loginPass)
+  let theRequiredUSer = compareuseremailtoDB(loginEmail,loginPass);
     if(!(theRequiredUSer)){
-      return res.status(401).send(' Email or password is not found!')
+      return res.status(401).send(' Email or password is not found!');
     } else {
        req.session.user_id = theRequiredUSer;
-
        res.status(200);
-      }
+    }
     res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
 
-  req.session.user_id = null
+  req.session.user_id = null;
   res.redirect("/urls");
 
 });
 //--------------- DAy 3 -------------------
-
 //----------- Register -------------------------
-
 app.get("/register", (req, res) => {
 
   if(req.session.user_id) {
@@ -256,7 +253,7 @@ app.get("/register", (req, res) => {
       urls: urlDatabase,
       link: shortUrl,
       user_id: req.session.user_id,
-    };
+  }
     res.render("user_register", templateVars);
   }
 });
@@ -270,7 +267,7 @@ app.post("/register", (req, res) => {
       }
     }
 
-    var GeneratedID = generateRandomString()
+    var GeneratedID = generateRandomString();
 
 // Define Hashed pass ------
 
@@ -284,12 +281,12 @@ app.post("/register", (req, res) => {
       password: hashed_password,
       };
 // add the new object to DB and set cookie and redirect
-    users[GeneratedID]= newRegisterObject
-    req.session.user_id = GeneratedID
+    users[GeneratedID]= newRegisterObject;
+    req.session.user_id = GeneratedID;
     res.redirect("/urls");
   } else {
-      res.status(400).send('Something broke! check if Email or password is entered')
-    }
+    res.status(400).send('Something broke! check if Email or password is entered');
+  }
 });
 
 

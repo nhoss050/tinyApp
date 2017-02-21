@@ -10,12 +10,12 @@
 
     <% for (each in urls) { %>
       <% if (urls[each].userInDB === user_id["id"]) { %>
-          <tr><form action="/urls/<%= each %>/delete" method='post'><td>
+          <tr><td>
            <a href=" /u/<%= each %>"><%= each%></a></td><td> ---> </td> <td><a href=" <%= urls[each].longUrls%>"><%= urls[each].longUrls%></a> </td> <td><span style="font-size:30%;"">  created:<%= urls[each].Datecreated%></span></td>
 
             <td><a style="margin:0 0 0 150px;" href=/urls/<%= each %> ">Edit</a></td>
-            <td><button style="margin:0 0 0 150px;">delete</button></td>
-            </form>
+            <td><form action="/urls/<%= each %>?_method=delete" method='post'><button style="margin:0 0 0 150px;">delete</button>            </form></td>
+
             </tr><br/>
     <% } %>
 
